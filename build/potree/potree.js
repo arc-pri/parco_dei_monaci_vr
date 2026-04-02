@@ -87297,6 +87297,52 @@ function computeSnapTurn(vrControls){
 	return 0;
 }
 
+function computeRightStickMove(vrControls){
+
+	let controller = vrControls.cSecondary;
+	let stick = getThumbstickAxes(controller);
+
+	if(!stick){
+		return null;
+	}
+
+	let x = Math.sign(stick.x) * Math.pow(Math.abs(stick.x), 2);
+	let y = Math.sign(stick.y) * Math.pow(Math.abs(stick.y), 2);
+
+	let maxSize = 0;
+	for(let pc of viewer.scene.pointclouds){
+		let size = pc.boundingBox.min.distanceTo(pc.boundingBox.max);
+		maxSize = Math.max(maxSize, size);
+	}
+
+	let multiplicator = Math.pow(maxSize, 0.5) / 2;
+
+	let scale = vrControls.node.scale.x;
+	let moveSpeed = viewer.getMoveSpeed();
+
+	let amountForward = multiplicator * y * Math.pow(moveSpeed, 0.5) / scale;
+	let amountStrafe = multiplicator * x * Math.pow(moveSpeed, 0.5) / scale;
+
+	let camVR = vrControls.viewer.renderer.xr.getCamera(fakeCam);
+
+	let forward = camVR.getWorldDirection(new Vector3());
+	forward.z = 0;
+
+	if(forward.lengthSq() === 0){
+		forward.set(0, 1, 0);
+	}
+
+	forward.normalize();
+
+	let right = new Vector3().crossVectors(forward, new Vector3(0, 0, 1)).normalize();
+
+	let move = new Vector3();
+	move.add(forward.clone().multiplyScalar(-amountForward));
+	move.add(right.clone().multiplyScalar(amountStrafe));
+
+	return move;
+}
+
 class FlyMode{
 
 		constructor(vrControls){
@@ -87321,22 +87367,20 @@ class FlyMode{
 
 			let primary = vrControls.cPrimary;
 
-let move = computeMove(vrControls, primary);
-
-if(!move){
-	move = new Vector3();
+let moveLeft = computeMove(vrControls, primary);
+if(!moveLeft){
+	moveLeft = new Vector3();
 }
+
+let moveRight = computeRightStickMove(vrControls);
+if(!moveRight){
+	moveRight = new Vector3();
+}
+
+let move = moveLeft.clone().add(moveRight);
 
 move.multiplyScalar(-delta * this.moveFactor);
 vrControls.node.position.add(move);
-
-let snapTurn = computeSnapTurn(vrControls);
-
-if(snapTurn !== 0){
-	vrControls.node.rotateOnWorldAxis(new Vector3(0, 0, 1), snapTurn);
-	vrControls.node.updateMatrix();
-	vrControls.node.updateMatrixWorld();
-}
 			
 
 			let scale = vrControls.node.scale.x;
