@@ -87231,16 +87231,7 @@ function getThumbstickAxes(controller){
 	return {x: x, y: y};
 }
 
-function computeMove(vrControls, controller){
-
-	let stick = getThumbstickAxes(controller);
-
-	if(!stick){
-		return null;
-	}
-
-	let x = Math.sign(stick.x) * Math.pow(Math.abs(stick.x), 2);
-	let y = Math.sign(stick.y) * Math.pow(Math.abs(stick.y), 2);
+function getSceneMoveFactors(vrControls){
 
 	let maxSize = 0;
 	for(let pc of viewer.scene.pointclouds){
@@ -87249,79 +87240,17 @@ function computeMove(vrControls, controller){
 	}
 
 	let multiplicator = Math.pow(maxSize, 0.5) / 2;
-
 	let scale = vrControls.node.scale.x;
 	let moveSpeed = viewer.getMoveSpeed();
 
-	let amountVertical =  5.0 * multiplicator * y * Math.pow(moveSpeed, 0.5) / scale;
-let move = new Vector3();
-move.add(new Vector3(0, 0, -amountVertical));
-
-return move;
-};
-
-function computeSnapTurn(vrControls){
-
-	let controller = vrControls.cPrimary;
-	let stick = getThumbstickAxes(controller);
-
-	if(!stick){
-		return 0;
-	}
-
-	const TURN_DEADZONE = 0.2;
-	const SNAP_THRESHOLD = 0.7;
-	const SNAP_ANGLE = Math.PI / 8;
-
-	if(vrControls._snapReady === undefined){
-		vrControls._snapReady = true;
-	}
-
-	let x = stick.x;
-
-	if(Math.abs(x) < TURN_DEADZONE){
-		vrControls._snapReady = true;
-		return 0;
-	}
-
-	if(vrControls._snapReady){
-		if(x > SNAP_THRESHOLD){
-			vrControls._snapReady = false;
-			return -SNAP_ANGLE;
-		}else if(x < -SNAP_THRESHOLD){
-			vrControls._snapReady = false;
-			return SNAP_ANGLE;
-		}
-	}
-
-	return 0;
+	return {
+		multiplicator: multiplicator,
+		scale: scale,
+		moveSpeed: moveSpeed
+	};
 }
 
-function computeRightStickMove(vrControls){
-
-	let controller = vrControls.cSecondary;
-	let stick = getThumbstickAxes(controller);
-
-	if(!stick){
-		return null;
-	}
-
-	let x = Math.sign(stick.x) * Math.pow(Math.abs(stick.x), 2);
-	let y = Math.sign(stick.y) * Math.pow(Math.abs(stick.y), 2);
-
-	let maxSize = 0;
-	for(let pc of viewer.scene.pointclouds){
-		let size = pc.boundingBox.min.distanceTo(pc.boundingBox.max);
-		maxSize = Math.max(maxSize, size);
-	}
-
-	let multiplicator = Math.pow(maxSize, 0.5) / 2;
-
-	let scale = vrControls.node.scale.x;
-	let moveSpeed = viewer.getMoveSpeed();
-
-	let amountForward = multiplicator * y * Math.pow(moveSpeed, 0.5) / scale;
-	let amountStrafe = multiplicator * x * Math.pow(moveSpeed, 0.5) / scale;
+function getHorizontalViewAxes(vrControls){
 
 	let camVR = vrControls.viewer.renderer.xr.getCamera(fakeCam);
 
@@ -87336,9 +87265,102 @@ function computeRightStickMove(vrControls){
 
 	let right = new Vector3().crossVectors(forward, new Vector3(0, 0, 1)).normalize();
 
+	return {forward: forward, right: right};
+}
+
+function computeLeftStickMove(vrControls){
+
+	let controller = vrControls.cPrimary;
+	let stick = getThumbstickAxes(controller);
+
+	if(!stick){
+		return new Vector3();
+	}
+
+	let y = Math.sign(stick.y) * Math.pow(Math.abs(stick.y), 2);
+
+	let factors = getSceneMoveFactors(vrControls);
+
+	// boost verticale dedicato al sinistro
+	const verticalBoost = 1.8;
+
+	let amountVertical = verticalBoost
+		* factors.multiplicator
+		* y
+		* Math.pow(factors.moveSpeed, 0.5)
+		/ factors.scale;
+
 	let move = new Vector3();
-	move.add(forward.clone().multiplyScalar(-amountForward));
-	move.add(right.clone().multiplyScalar(amountStrafe));
+	move.add(new Vector3(0, 0, -amountVertical));
+
+	return move;
+}
+
+function computeLeftStickTurn(vrControls){
+
+	let controller = vrControls.cPrimary;
+	let stick = getThumbstickAxes(controller);
+
+	if(!stick){
+		return 0;
+	}
+
+	const TURN_DEADZONE = 0.2;
+	const SNAP_THRESHOLD = 0.7;
+	const SNAP_ANGLE = Math.PI / 8;
+
+	if(vrControls._snapReadyLeft === undefined){
+		vrControls._snapReadyLeft = true;
+	}
+
+	let x = stick.x;
+
+	if(Math.abs(x) < TURN_DEADZONE){
+		vrControls._snapReadyLeft = true;
+		return 0;
+	}
+
+	if(vrControls._snapReadyLeft){
+		if(x > SNAP_THRESHOLD){
+			vrControls._snapReadyLeft = false;
+			return -SNAP_ANGLE;
+		}else if(x < -SNAP_THRESHOLD){
+			vrControls._snapReadyLeft = false;
+			return SNAP_ANGLE;
+		}
+	}
+
+	return 0;
+}
+
+function computeRightStickMove(vrControls){
+
+	let controller = vrControls.cSecondary;
+	let stick = getThumbstickAxes(controller);
+
+	if(!stick){
+		return new Vector3();
+	}
+
+	let x = Math.sign(stick.x) * Math.pow(Math.abs(stick.x), 2);
+	let y = Math.sign(stick.y) * Math.pow(Math.abs(stick.y), 2);
+
+	let factors = getSceneMoveFactors(vrControls);
+	let axes = getHorizontalViewAxes(vrControls);
+
+	let amountForward = factors.multiplicator
+		* y
+		* Math.pow(factors.moveSpeed, 0.5)
+		/ factors.scale;
+
+	let amountStrafe = factors.multiplicator
+		* x
+		* Math.pow(factors.moveSpeed, 0.5)
+		/ factors.scale;
+
+	let move = new Vector3();
+	move.add(axes.forward.clone().multiplyScalar(-amountForward));
+	move.add(axes.right.clone().multiplyScalar(amountStrafe));
 
 	return move;
 }
@@ -87367,20 +87389,21 @@ class FlyMode{
 
 			let primary = vrControls.cPrimary;
 
-let moveLeft = computeMove(vrControls, primary);
-if(!moveLeft){
-	moveLeft = new Vector3();
-}
-
+let moveLeft = computeLeftStickMove(vrControls);
 let moveRight = computeRightStickMove(vrControls);
-if(!moveRight){
-	moveRight = new Vector3();
-}
 
 let move = moveLeft.clone().add(moveRight);
 
 move.multiplyScalar(-delta * this.moveFactor);
 vrControls.node.position.add(move);
+
+let snapTurn = computeLeftStickTurn(vrControls);
+
+if(snapTurn !== 0){
+	vrControls.node.rotateOnWorldAxis(new Vector3(0, 0, 1), snapTurn);
+	vrControls.node.updateMatrix();
+	vrControls.node.updateMatrixWorld();
+}
 			
 
 			let scale = vrControls.node.scale.x;
