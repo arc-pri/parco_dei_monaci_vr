@@ -87254,23 +87254,8 @@ function computeMove(vrControls, controller){
 	let moveSpeed = viewer.getMoveSpeed();
 
 	let amountVertical = multiplicator * y * Math.pow(moveSpeed, 0.5) / scale;
-let amountStrafe = multiplicator * x * Math.pow(moveSpeed, 0.5) / scale;
-
-let camVR = vrControls.viewer.renderer.xr.getCamera(fakeCam);
-
-let forward = camVR.getWorldDirection(new Vector3());
-forward.z = 0;
-
-if(forward.lengthSq() === 0){
-	forward.set(0, 1, 0);
-}
-
-forward.normalize();
-
-let right = new Vector3().crossVectors(forward, new Vector3(0, 0, 1)).normalize();
 
 let move = new Vector3();
-move.add(right.clone().multiplyScalar(amountStrafe));
 move.add(new Vector3(0, 0, -amountVertical));
 
 return move;
@@ -87278,7 +87263,7 @@ return move;
 
 function computeSnapTurn(vrControls){
 
-	let controller = vrControls.cSecondary;
+	let controller = vrControls.cPrimary;
 	let stick = getThumbstickAxes(controller);
 
 	if(!stick){
