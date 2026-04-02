@@ -87253,7 +87253,7 @@ function computeMove(vrControls, controller){
 	let scale = vrControls.node.scale.x;
 	let moveSpeed = viewer.getMoveSpeed();
 
-	let amountVertical =  2.0 * multiplicator * y * Math.pow(moveSpeed, 0.5) / scale;
+	let amountVertical =  5.0 * multiplicator * y * Math.pow(moveSpeed, 0.5) / scale;
 let move = new Vector3();
 move.add(new Vector3(0, 0, -amountVertical));
 
