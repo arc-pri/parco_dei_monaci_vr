@@ -87190,18 +87190,18 @@ ENDSEC
 
 	let fakeCam = new PerspectiveCamera();
 
-	function toScene(vec, ref){
-		let node = ref.clone();
-		node.updateMatrix();
-		node.updateMatrixWorld();
+function toScene(vec, ref){
+	let node = ref.clone();
+	node.updateMatrix();
+	node.updateMatrixWorld();
 
-		let result = vec.clone().applyMatrix4(node.matrix);
-		result.z -= 0.8 * node.scale.x;
+	let result = vec.clone().applyMatrix4(node.matrix);
+	result.z -= 0.8 * node.scale.x;
 
-		return result;
-	};
+	return result;
+};
 
-	unction getThumbstickAxes(controller){
+function getThumbstickAxes(controller){
 
 	if(!controller || !controller.inputSource || !controller.inputSource.gamepad){
 		return null;
@@ -87225,15 +87225,15 @@ ENDSEC
 
 	const DEADZONE = 0.15;
 
-	if(Math.abs(x) < DEADZONE) x = 0;
-	if(Math.abs(y) < DEADZONE) y = 0;
+	if(Math.abs(x) < DEADZONE){ x = 0; }
+	if(Math.abs(y) < DEADZONE){ y = 0; }
 
-	return {x, y};
+	return {x: x, y: y};
 }
 
 function computeMove(vrControls, controller){
 
-	const stick = getThumbstickAxes(controller);
+	let stick = getThumbstickAxes(controller);
 
 	if(!stick){
 		return null;
@@ -87254,7 +87254,7 @@ function computeMove(vrControls, controller){
 	let moveSpeed = viewer.getMoveSpeed();
 
 	let amountForward = multiplicator * y * Math.pow(moveSpeed, 0.5) / scale;
-	let amountStrafe  = multiplicator * x * Math.pow(moveSpeed, 0.5) / scale;
+	let amountStrafe = multiplicator * x * Math.pow(moveSpeed, 0.5) / scale;
 
 	let camVR = vrControls.viewer.renderer.xr.getCamera(fakeCam);
 
@@ -87275,11 +87275,11 @@ function computeMove(vrControls, controller){
 
 	return move;
 };
-    function computeSnapTurn(vrControls){
+
+function computeSnapTurn(vrControls){
 
 	let controller = vrControls.cSecondary;
-
-	const stick = getThumbstickAxes(controller);
+	let stick = getThumbstickAxes(controller);
 
 	if(!stick){
 		return 0;
@@ -87313,8 +87313,7 @@ function computeMove(vrControls, controller){
 	return 0;
 }
 
-
-	class FlyMode{
+class FlyMode{
 
 		constructor(vrControls){
 			this.moveFactor = 1;
