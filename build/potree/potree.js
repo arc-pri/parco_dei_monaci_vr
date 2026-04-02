@@ -87253,27 +87253,27 @@ function computeMove(vrControls, controller){
 	let scale = vrControls.node.scale.x;
 	let moveSpeed = viewer.getMoveSpeed();
 
-	let amountForward = multiplicator * y * Math.pow(moveSpeed, 0.5) / scale;
-	let amountStrafe = multiplicator * x * Math.pow(moveSpeed, 0.5) / scale;
+	let amountVertical = multiplicator * y * Math.pow(moveSpeed, 0.5) / scale;
+let amountStrafe = multiplicator * x * Math.pow(moveSpeed, 0.5) / scale;
 
-	let camVR = vrControls.viewer.renderer.xr.getCamera(fakeCam);
+let camVR = vrControls.viewer.renderer.xr.getCamera(fakeCam);
 
-	let forward = camVR.getWorldDirection(new Vector3());
-	forward.z = 0;
+let forward = camVR.getWorldDirection(new Vector3());
+forward.z = 0;
 
-	if(forward.lengthSq() === 0){
-		forward.set(0, 1, 0);
-	}
+if(forward.lengthSq() === 0){
+	forward.set(0, 1, 0);
+}
 
-	forward.normalize();
+forward.normalize();
 
-	let right = new Vector3().crossVectors(forward, new Vector3(0, 0, 1)).normalize();
+let right = new Vector3().crossVectors(forward, new Vector3(0, 0, 1)).normalize();
 
-	let move = new Vector3();
-	move.add(forward.clone().multiplyScalar(-amountForward));
-	move.add(right.clone().multiplyScalar(amountStrafe));
+let move = new Vector3();
+move.add(right.clone().multiplyScalar(amountStrafe));
+move.add(new Vector3(0, 0, -amountVertical));
 
-	return move;
+return move;
 };
 
 function computeSnapTurn(vrControls){
