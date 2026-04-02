@@ -87349,7 +87349,7 @@ vrControls.node.position.add(move);
 let snapTurn = computeSnapTurn(vrControls);
 
 if(snapTurn !== 0){
-	vrControls.node.rotateOnAxis(new Vector3(0, 0, 1), snapTurn);
+	vrControls.node.rotateOnWorldAxis(new Vector3(0, 0, 1), snapTurn);
 	vrControls.node.updateMatrix();
 	vrControls.node.updateMatrixWorld();
 }
