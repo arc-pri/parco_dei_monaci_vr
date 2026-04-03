@@ -87281,7 +87281,6 @@ function computeLeftStickMove(vrControls){
 
 	let factors = getSceneMoveFactors(vrControls);
 
-	// boost verticale dedicato al sinistro
 	const verticalBoost = 1.8;
 
 	let amountVertical = verticalBoost
@@ -87291,7 +87290,7 @@ function computeLeftStickMove(vrControls){
 		/ factors.scale;
 
 	let move = new Vector3();
-	move.add(new Vector3(0, 0, -amountVertical));
+	move.add(new Vector3(0, 0, amountVertical));
 
 	return move;
 }
@@ -87305,32 +87304,18 @@ function computeLeftStickTurn(vrControls){
 		return 0;
 	}
 
-	const TURN_DEADZONE = 0.2;
-	const SNAP_THRESHOLD = 0.7;
-	const SNAP_ANGLE = Math.PI / 8;
-
-	if(vrControls._snapReadyLeft === undefined){
-		vrControls._snapReadyLeft = true;
-	}
+	const TURN_DEADZONE = 0.15;
+	const TURN_SPEED = 1.8;
 
 	let x = stick.x;
 
 	if(Math.abs(x) < TURN_DEADZONE){
-		vrControls._snapReadyLeft = true;
 		return 0;
 	}
 
-	if(vrControls._snapReadyLeft){
-		if(x > SNAP_THRESHOLD){
-			vrControls._snapReadyLeft = false;
-			return -SNAP_ANGLE;
-		}else if(x < -SNAP_THRESHOLD){
-			vrControls._snapReadyLeft = false;
-			return SNAP_ANGLE;
-		}
-	}
+	let turn = Math.sign(x) * Math.pow(Math.abs(x), 2) * TURN_SPEED;
 
-	return 0;
+	return turn;
 }
 
 function computeRightStickMove(vrControls){
@@ -87359,7 +87344,7 @@ function computeRightStickMove(vrControls){
 		/ factors.scale;
 
 	let move = new Vector3();
-	move.add(axes.forward.clone().multiplyScalar(-amountForward));
+	move.add(axes.forward.clone().multiplyScalar(amountForward));
 	move.add(axes.right.clone().multiplyScalar(amountStrafe));
 
 	return move;
@@ -87397,10 +87382,13 @@ let move = moveLeft.clone().add(moveRight);
 move.multiplyScalar(-delta * this.moveFactor);
 vrControls.node.position.add(move);
 
-let snapTurn = computeLeftStickTurn(vrControls);
+let smoothTurn = computeLeftStickTurn(vrControls);
 
-if(snapTurn !== 0){
-	vrControls.node.rotateOnWorldAxis(new Vector3(0, 0, 1), snapTurn);
+if(smoothTurn !== 0){
+	vrControls.node.rotateOnWorldAxis(
+		new Vector3(0, 0, 1),
+		-smoothTurn * delta
+	);
 	vrControls.node.updateMatrix();
 	vrControls.node.updateMatrixWorld();
 }
