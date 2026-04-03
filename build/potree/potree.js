@@ -87254,7 +87254,14 @@ function getHorizontalViewAxes(vrControls){
 
 	let camVR = vrControls.viewer.renderer.xr.getCamera(fakeCam);
 
-	let forward = camVR.getWorldDirection(new Vector3());
+	let vrPos = camVR.getWorldPosition(new Vector3());
+	let vrDir = camVR.getWorldDirection(new Vector3());
+
+	// porto direzione e posizione nel sistema scena Potree
+	let scenePos = toScene(vrPos, vrControls.node);
+	let sceneLook = toScene(vrPos.clone().add(vrDir), vrControls.node);
+
+	let forward = sceneLook.sub(scenePos);
 	forward.z = 0;
 
 	if(forward.lengthSq() === 0){
@@ -87263,6 +87270,7 @@ function getHorizontalViewAxes(vrControls){
 
 	forward.normalize();
 
+	// asse destro coerente col punto di vista
 	let right = new Vector3().crossVectors(forward, new Vector3(0, 0, 1)).normalize();
 
 	return {forward: forward, right: right};
@@ -87333,18 +87341,26 @@ function computeRightStickMove(vrControls){
 	let factors = getSceneMoveFactors(vrControls);
 	let axes = getHorizontalViewAxes(vrControls);
 
-	let amountForward = factors.multiplicator
+	const rightStickSpeedBoost = 5; // aumenta qui: 2.0, 2.5, 3.0...
+
+	let amountForward = rightStickSpeedBoost
+		* factors.multiplicator
 		* y
 		* Math.pow(factors.moveSpeed, 0.5)
 		/ factors.scale;
 
-	let amountStrafe = factors.multiplicator
+	let amountStrafe = rightStickSpeedBoost
+		* factors.multiplicator
 		* x
 		* Math.pow(factors.moveSpeed, 0.5)
 		/ factors.scale;
 
 	let move = new Vector3();
+
+	// su = avanti rispetto a dove guardi
 	move.add(axes.forward.clone().multiplyScalar(amountForward));
+
+	// destra = destra rispetto a dove guardi
 	move.add(axes.right.clone().multiplyScalar(amountStrafe));
 
 	return move;
